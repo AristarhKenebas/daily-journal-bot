@@ -1,5 +1,5 @@
 import { join } from "path";
-import { mkdir, appendFile, readFile, readdir } from "fs/promises";
+import { mkdir, appendFile, readFile, readdir, unlink, writeFile } from "fs/promises";
 
 export async function saveEntry(text: string): Promise<string> {
   const now = new Date();
@@ -20,16 +20,19 @@ export async function saveEntry(text: string): Promise<string> {
   return filename;
 }
 
-export async function getTodayEntries(): Promise<string> {
+export async function getTodayEntries(dateStr?: string): Promise<string> {
   const now = new Date();
-  const filename = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}.md`;
+  const filename = dateStr
+    ? `${dateStr}.md`
+    : `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}.md`;
+
   const filePath = join(process.cwd(), "journals", filename);
 
   try {
     const content = await readFile(filePath, "utf-8");
-    return content.trim() || "Сегодня записей нет.";
+    return content.trim() || "Записей нет.";
   } catch {
-    return "Сегодня записей нет.";
+    return "Записей нет.";
   }
 }
 
@@ -74,5 +77,39 @@ export async function getStreak(): Promise<string> {
     return `Стрик: ${streak} ${streak === 1 ? "день" : streak < 5 ? "дня" : "дней"} подряд`;
   } catch {
     return "Стрик: 0 дней";
+  }
+}
+
+export async function deleteEntry(date: string): Promise<void> {
+  const filePath = join(process.cwd(), "journals", `${date}.md`);
+  try {
+    await unlink(filePath);
+  } catch {
+    // файл уже не существует
+  }
+}
+
+export async function editLastEntry(date: string, newText: string): Promise<void> {
+  const filePath = join(process.cwd(), "journals", `${date}.md`);
+
+  try {
+    const content = await readFile(filePath, "utf-8");
+    const lines = content.split("\n");
+
+    let lastHeaderIndex = -1;
+    for (let i = lines.length - 1; i >= 0; i--) {
+      if (lines[i]?.startsWith("## ")) {
+        lastHeaderIndex = i;
+        break;
+      }
+    }
+
+    if (lastHeaderIndex === -1) return;
+
+    const before = lines.slice(0, lastHeaderIndex + 1);
+    const updated = [...before, "", newText, ""].join("\n");
+    await writeFile(filePath, updated, "utf-8");
+  } catch {
+    // файл не найден
   }
 }
