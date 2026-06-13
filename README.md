@@ -21,22 +21,22 @@ Built with [Bun](https://bun.sh) and [grammY](https://grammy.dev).
 
 ### 1. Clone the repository
 
-\```bash
+```bash
 git clone https://github.com/AristarhKenebas/daily-journal-bot.git
 cd daily-journal-bot
-\```
+```
 
 ### 2. Install dependencies
 
-\```bash
+```bash
 bun install
-\```
+```
 
 ### 3. Configure environment
 
-\```bash
+```bash
 cp .env.example .env
-\```
+```
 
 Edit `.env` and fill in your values:
 
@@ -45,29 +45,29 @@ Edit `.env` and fill in your values:
 
 ### 4. Run
 
-\```bash
+```bash
 bun --env-file=.env index.ts
-\```
+```
 
 ## Journal Storage
 
 Entries are saved to the `journals/` directory as daily Markdown files:
 
-\```
+```
 journals/
 ├── 2026-06-13.md
 ├── 2026-06-14.md
 └── ...
-\```
+```
 
 Each file contains timestamped entries for that day.
 
 ## Docker
 
-\```bash
+```bash
 docker build -t daily-journal-bot .
 docker run -d \
   --env-file .env \
   -v $(pwd)/journals:/app/journals \
   daily-journal-bot
-\```
+```
