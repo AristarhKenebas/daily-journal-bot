@@ -112,4 +112,32 @@ export async function editLastEntry(date: string, newText: string): Promise<void
   } catch {
     // файл не найден
   }
+  
+}
+
+export async function searchEntries(query: string): Promise<string> {
+  const dirPath = join(process.cwd(), "journals");
+
+  try {
+    const files = await readdir(dirPath);
+    const mdFiles = files.filter(f => f.endsWith(".md")).sort().reverse();
+    const results: string[] = [];
+
+    for (const file of mdFiles) {
+      const filePath = join(dirPath, file);
+      const content = await readFile(filePath, "utf-8");
+      
+      // Ищем совпадение, игнорируя регистр
+      if (content.toLowerCase().includes(query.toLowerCase())) {
+        const date = file.replace(".md", "");
+        results.push(`📅 ${date}`);
+      }
+    }
+
+    if (results.length === 0) return `По запросу "${query}" ничего не найдено.`;
+    
+    return `Найдено в записях:\n\n${results.join("\n")}\n\nНажми /list и выбери нужный день для просмотра.`;
+  } catch {
+    return "Ошибка при поиске. Возможно, записей еще нет.";
+  }
 }

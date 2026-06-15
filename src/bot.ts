@@ -15,13 +15,5 @@ bot.use(async (ctx, next) => {
 
 registerCommands(bot);
 
-bot.on("message:text", async (ctx) => {
-  const text = ctx.message.text;
-  if (text.startsWith("/")) return;
-  const filename = await saveEntry(text);
-  await ctx.reply(`✓ Записано в ${filename}`);
-});
-
 export { bot };
-
 bot.start();

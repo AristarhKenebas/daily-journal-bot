@@ -1,7 +1,8 @@
 import { Bot, InlineKeyboard } from "grammy";
-import { getTodayEntries, getJournalList, getStreak, deleteEntry, editLastEntry, saveEntry } from "./journal";
+import { getTodayEntries, getJournalList, getStreak, deleteEntry, editLastEntry, saveEntry, searchEntries} from "./journal";
 import { readdir } from "fs/promises";
 import { join } from "path";
+import { applyMarkdown } from "./utils";
 
 export function registerCommands(bot: Bot) {
   bot.command("start", (ctx) => {
@@ -11,6 +12,7 @@ export function registerCommands(bot: Bot) {
       "/menu — открыть меню\n" +
       "/today — записи за сегодня\n" +
       "/list — все дни\n" +
+      "/search <тег> — поиск по записям\n" +
       "/stats — стрик"
     );
   });
@@ -32,6 +34,18 @@ export function registerCommands(bot: Bot) {
     await ctx.reply(entries);
   });
 
+  bot.command("search", async (ctx) => {
+  const query = ctx.match;
+  
+  if (!query) {
+    await ctx.reply("Укажи слово или тег для поиска.\nПример: /search #идея или /search отпуск");
+    return;
+  }
+
+  const result = await searchEntries(query);
+  await ctx.reply(result);
+});
+
   bot.callbackQuery("list", async (ctx) => {
     await ctx.answerCallbackQuery();
     await showDateList(ctx);
@@ -50,8 +64,9 @@ export function registerCommands(bot: Bot) {
       "/menu — главное меню\n" +
       "/today — записи за сегодня\n" +
       "/list — все дни\n" +
+      "/search <слово или тег> — поиск (например: /search #идея)\n" +
       "/stats — стрик\n\n" +
-      "Просто напиши текст — я сохраню запись."
+      "Просто напиши текст (можно с форматированием) — я сохраню запись."
     );
   });
 
@@ -103,21 +118,22 @@ export function registerCommands(bot: Bot) {
     editState.set(ctx.from!.id, date);
   });
 
-  bot.on("message:text", async (ctx) => {
+bot.on("message:text", async (ctx) => {
     const text = ctx.message.text;
     if (text.startsWith("/")) return;
 
     const userId = ctx.from!.id;
+    const formattedText = applyMarkdown(text, ctx.message.entities);
 
     if (editState.has(userId)) {
       const date = editState.get(userId)!;
       editState.delete(userId);
-      await editLastEntry(date, text);
+      await editLastEntry(date, formattedText);
       await ctx.reply(`✓ Последняя запись за ${date} обновлена.`);
       return;
     }
 
-    const filename = await saveEntry(text);
+    const filename = await saveEntry(formattedText);
     await ctx.reply(`✓ Записано в ${filename}`);
   });
 
